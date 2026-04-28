@@ -1,0 +1,43 @@
+# Git ignore rules for bootstrap repository
+
+# User-specific files
+*.log
+*.tmp
+*.bak
+
+# Sensitive data
+.ssh/
+.aws/
+.azure/
+.credentials
+secrets.toml
+
+# WinGet cache
+packages/.winget-cache/
+
+# Mise cache
+.mise/
+.toolversion
+
+# Chezmoi cache
+.local/share/chezmoi/.git/
+
+# IDE and editor
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# Windows
+Thumbs.db
+.DS_Store
+$RECYCLE.BIN/
+
+# Environment
+.env
+.env.local
+
+# Build artifacts
+bin/
+obj/
+dist/

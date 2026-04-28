@@ -1,0 +1,1 @@
+## Scripts powershell caso outras ferramentas falhem

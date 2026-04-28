@@ -1,0 +1,86 @@
+{
+    "$schema": "https://aka.ms/winget-packages.schema.2.0.json",
+    "WinGetVersion": "1.6.0",
+    "Sources": [
+        {
+            "Coordinate": {
+                "Type": "Microsoft.Winget.Source",
+                "Name": "winget"
+            }
+        }
+    ],
+    "Packages": [
+        {
+            "PackageIdentifier": "Brave.Brave",
+            "Version": "latest"
+        },
+        {
+            "PackageIdentifier": "Microsoft.VisualStudioCode",
+            "Version": "latest"
+        },
+        {
+            "PackageIdentifier": "Git.Git",
+            "Version": "latest"
+        },
+        {
+            "PackageIdentifier": "Obsidian.Obsidian",
+            "Version": "latest"
+        },
+        {
+            "PackageIdentifier": "Docker.DockerDesktop",
+            "Version": "latest"
+        },
+        {
+            "PackageIdentifier": "RARLab.WinRAR",
+            "Version": "latest"
+        },
+        {
+            "PackageIdentifier": "Postman.Postman",
+            "Version": "latest"
+        },
+        {
+            "PackageIdentifier": "beekeeper-studio.beekeeper-studio",
+            "Version": "latest"
+        },
+        {
+            "PackageIdentifier": "Anaconda.Miniconda3",
+            "Version": "latest"
+        },
+        {
+            "PackageIdentifier": "jdx.mise",
+            "Version": "latest"
+        },
+        {
+            "PackageIdentifier": "twpayne.chezmoi",
+            "Version": "latest"
+        },
+        {
+            "PackageIdentifier": "Valve.Steam",
+            "Version": "latest"
+        },
+        {
+            "PackageIdentifier": "Spotify.Spotify",
+            "Version": "latest"
+        },
+        {
+            "PackageIdentifier": "Discord.Discord",
+            "Version": "latest"
+        },
+        {
+            "PackageIdentifier": "astral-sh.uv",
+            "Version": "latest"
+        },
+        {
+            "PackageIdentifier": "JetBrains.IntelliJIDEA.Community",
+            "Version": "latest"
+        },
+        {
+            "PackageIdentifier": "EpicGames.EpicGamesLauncher",
+            "Version": "latest"
+        },
+        {
+            "PackageIdentifier": "VideoLAN.VLC",
+            "Version": "latest"
+        }
+    ]
+}

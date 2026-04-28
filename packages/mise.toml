@@ -1,0 +1,27 @@
+# Mise Configuration
+# Manages runtimes and CLI tools for both work and personal profiles
+
+[env]
+# Global environment variables
+_ = { lt = "4", lte = "5", gt = "0", gte = "0.1.0" }
+
+[tools]
+# Python - needed for many dev tasks
+python = "3.13"
+
+nodejs = "20"
+
+go = "latest"
+
+# rust = "latest"
+
+# Task runner - for build automation
+task = "latest"
+
+[env.work]
+# Work-specific environment variables
+PROFILE = "work"
+
+[env.personal]
+# Personal-specific environment variables
+PROFILE = "personal"
