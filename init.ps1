@@ -10,8 +10,8 @@
     
     This script should be run from the FERRAMENTAS directory on a clean machine.
     
-.PARAMETER Profile
-    Bootstrap profile to install: 'work' or 'full'
+.PARAMETER Perfil
+    Bootstrap profile to install: 'work' or 'personal'
     Default: 'work'
     
 .EXAMPLE
@@ -22,9 +22,8 @@
 #>
 
 param(
-    [ValidateSet('work', 'full')]
-    [string]$Profile,
-    
+    [ValidateSet('work', 'personal')]
+    [string]$Perfil,
     [switch]$Verbose
 )
 
@@ -81,7 +80,7 @@ function Test-CommandExists {
 Write-Header "Windows Bootstrap Initializer"
 
 # Ask user for profile if not provided
-if ([string]::IsNullOrWhiteSpace($Profile)) {
+if ([string]::IsNullOrWhiteSpace($Perfil)) {
     Write-Info "Select installation profile:"
     Write-Info ""
     Write-Host "  1. work    - Development tools only (recommended for work machines)" -ForegroundColor $colors.Info
@@ -91,10 +90,10 @@ if ([string]::IsNullOrWhiteSpace($Profile)) {
     $choice = Read-Host "Enter your choice (1 or 2)"
     
     if ($choice -eq '1') {
-        $Profile = 'work'
+        $Perfil = 'work'
     }
     elseif ($choice -eq '2') {
-        $Profile = 'personal'
+        $Perfil = 'personal'
     }
     else {
         Write-Error "Invalid choice. Please run the script again."
@@ -102,11 +101,11 @@ if ([string]::IsNullOrWhiteSpace($Profile)) {
     }
 }
 
-Write-Info "Profile: $Profile"
+Write-Info "Profile: $Perfil"
 Write-Info "Starting initialization process..."
 
 # Get script directory
-$scriptDir = Split-Path -Parent $PSCommandPath
+$scriptDir = (Get-Location).Path
 Write-Info "Script directory: $scriptDir"
 
 # ============================================================================
@@ -152,7 +151,7 @@ else {
 
 Write-Header "Verifying Bootstrap Script"
 
-$bootstrapPath = Join-Path $scriptDir "bootstrap.ps1"
+$bootstrapPath = Join-Path -Path $scriptDir -ChildPath "bootstrap.ps1"
 
 if (-not (Test-Path $bootstrapPath)) {
     Write-Error "bootstrap.ps1 not found in current directory"
@@ -168,7 +167,7 @@ Write-Success "bootstrap.ps1 found"
 
 Write-Header "Running Bootstrap Tasks"
 
-Write-Info "Starting Mise bootstrap tasks with profile: $Profile"
+Write-Info "Starting Mise bootstrap tasks with profile: $Perfil"
 Write-Info ""
 
 # Verify Mise is available
@@ -187,16 +186,16 @@ Write-Info ""
 
 try {
     # Set profile environment variable
-    $profileEnv = if ($Profile -eq 'work') { 'work' } else { 'personal' }
-    [System.Environment]::SetEnvironmentVariable('BOOTSTRAP_PROFILE', $profileEnv, 'User')
-    $env:BOOTSTRAP_PROFILE = $profileEnv
+    $PerfilEnv = if ($Perfil -eq 'work') { 'work' } else { 'personal' }
+    [System.Environment]::SetEnvironmentVariable('BOOTSTRAP_PROFILE', $PerfilEnv, 'User')
+    $env:BOOTSTRAP_PROFILE = $PerfilEnv
     
-    Write-Success "Profile variable set: BOOTSTRAP_PROFILE=$profileEnv"
+    Write-Success "Profile variable set: BOOTSTRAP_PROFILE=$PerfilEnv"
     Write-Info ""
     
     # Run Mise bootstrap task from project root
     Push-Location $scriptDir
-    
+    mise install
     mise run bootstrap
     
     Pop-Location

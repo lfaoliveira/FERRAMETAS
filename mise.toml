@@ -1,27 +1,18 @@
-# Mise Tasks for Windows Bootstrap
-# Tasks that call bootstrap.ps1
-# Run with: mise run <task-name>
-
-[env]
-MISE_PROJECT_ROOT = "{{dir}}"
-
 [tools]
 python = "3.13"
-nodejs = "20"
+nodejs = "24"
 java = "21"
 go = "latest"
 task = "latest"
 
-[env.work]
-PROFILE = "work"
+[tasks.winget]
+description = "Instalar tudo do winget"
+run = "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/winget.ps1"
 
-[env.personal]
-PROFILE = "personal"
+[tasks.chezmoi]
+description = "Inicializar chezmoi"
+run = "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/chezmoi.ps1"
 
-# Main bootstrap task
 [tasks.bootstrap]
-description = "Run complete bootstrap (WinGet packages + Mise tools + Chezmoi)"
-run = """
-  $profile = if ($env:BOOTSTRAP_PROFILE) { $env:BOOTSTRAP_PROFILE } else { 'personal' }
-  & .\bootstrap.ps1 -Profile $profile
-"""
+description = "Run complete bootstrap"
+run = [{ task = "winget" }, { task = "chezmoi" }]

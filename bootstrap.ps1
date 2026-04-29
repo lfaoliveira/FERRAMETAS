@@ -1,5 +1,4 @@
 #Requires -Version 5.1
-#Requires -RunAsAdministrator
 
 <#
 .SYNOPSIS
@@ -7,33 +6,23 @@
     
 .DESCRIPTION
     Provisions Windows machines with development tools using WinGet, Mise, and Chezmoi.
-    Supports two profiles: 'work' and 'full' (personal).
+    Supports two profiles: 'work' and 'personal' (personal).
     
-.PARAMETER Profile
-    Bootstrap profile to install: 'work' or 'full'
+.PARAMETER Perfil
+    Bootstrap profile to install: 'work' or 'personal'
     - work: development tools only
-    - full: development + personal applications
-    
-.PARAMETER SkipWinget
-    Skip WinGet package installation
-    
-.PARAMETER SkipMise
-    Skip Mise setup
-    
-.PARAMETER SkipChezmoi
-    Skip Chezmoi initialization
+    - personal: development + personal applications
     
 .EXAMPLE
     .\bootstrap.ps1 -Profile work
     
 .EXAMPLE
-    .\bootstrap.ps1 -Profile full -SkipWinget
+    .\bootstrap.ps1 -Profile personal
 #>
 
 param(
-    [ValidateSet('work', 'full')]
-    [string]$Profile = 'work',
-    [switch]$SkipChezmoi,
+    [ValidateSet('work', 'personal')]
+    [string]$Perfil = $env:BOOTSTRAP_PROFILE,
     [switch]$Verbose
 )
 
@@ -87,7 +76,30 @@ function Test-CommandExists {
 # INITIALIZATION
 # ============================================================================
 
-Write-Header "Windows Bootstrap - Profile: $Profile"
+$currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
+$principal = [Security.Principal.WindowsPrincipal]::new($currentUser)
+
+if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Start-Process powershell `
+        -Verb RunAs `
+        -Wait `
+        -ArgumentList @(
+        '-NoProfile',
+        '-NoExit',
+        '-ExecutionPolicy', 'Bypass',        
+        '-File', $PSCommandPath,
+        '-Perfil', $Perfil
+    )
+    
+    exit $LASTEXITCODE
+}
+
+if ([string]::IsNullOrWhiteSpace($Perfil)) {
+    throw 'PERFIL VAZIO!'
+}
+
+
+Write-Header "Windows Bootstrap - Profile: $Perfil"
 Write-Info "Starting bootstrap process..."
 Write-Info "Script directory: $(Split-Path -Parent $PSCommandPath)"
 
@@ -103,82 +115,90 @@ if (-not (Test-Path $packageDir)) {
 # ============================================================================
 # PREREQUISITE CHECKS
 # ============================================================================
-
+$error = 0
+$errorMsg = ""
 Write-Header "Running Boostrapping"
+
+# ============================================================================
+# INSTALACAO WINGET
+# ============================================================================
+
+$wingetFile = Join-Path $packageDir "winget-$Perfil.json"
+
+if (-not (Test-Path $wingetFile)) {
+    throw "Winget package file not found: $wingetFile"
+}
+try {
+    winget import `
+        --import-file $wingetFile `
+        --accept-source-agreements `
+        --accept-package-agreements
+}
+catch {
+    $error = 1
+    $errorMsg = "Erro ao instalar pacotes do winget"
+    Write-Error $errorMsg
+}
+
 
 # ============================================================================
 # CHEZMOI SETUP
 # ============================================================================
 
-if (-not $SkipChezmoi) {
-    Write-Header "Initializing Chezmoi"
+Write-Header "Initializing Chezmoi"
     
-    # Check if Chezmoi is installed
-    if (-not (Test-CommandExists chezmoi)) {
-        Write-Info "Chezmoi not found. Installing..."
-        if (-not $SkipWinget) {
-            try {
-                winget install --id twpayne.chezmoi --accept-source-agreements --accept-package-agreements
-                Write-Success "Chezmoi installed"
-            }
-            catch {
-                Write-Error "Chezmoi installation failed: $_"
-                exit 1
-            }
-        } else {
-            Write-Error "Chezmoi not found and WinGet setup was skipped."
-            exit 1
-        }
-    } else {
-        Write-Success "Chezmoi found"
+# Check if Chezmoi is installed
+if (-not (Test-CommandExists chezmoi)) {
+    Write-Info "Chezmoi not found. Installing..."
         
-        $chezmoiDir = Join-Path $scriptDir "chezmoi"
-        
-        if (Test-Path $chezmoiDir) {
-            Write-Info "Chezmoi dotfiles directory: $chezmoiDir"
-            Write-Info "To apply configurations, run: chezmoi apply"
-        }
-        else {
-            Write-Warning "Chezmoi directory not found. Create it with your dotfiles at: $chezmoiDir"
-        }
-        
-        # Initialize chezmoi with git if not already done
-        if (-not (Test-Path "$env:USERPROFILE\.local\share\chezmoi\.git")) {
-            Write-Info "Initializing Chezmoi repository..."
-            try {
-                chezmoi init --apply=false 2>&1 | ForEach-Object { Write-Info $_ }
-                Write-Success "Chezmoi initialized"
-            }
-            catch {
-                Write-Warning "Chezmoi initialization: $_"
-            }
-        }
-        else {
-            Write-Success "Chezmoi already initialized"
-        }
+    try {
+        winget install --id twpayne.chezmoi --accept-source-agreements --accept-package-agreements
+        Write-Success "Chezmoi installed"
+    }
+    catch {
+        Write-Error "Chezmoi installation failed: $_"
+        $error = 1
+        $errorMsg = "Erro ao instalar chezmoi"
+        Write-Error $errorMsg
     }
 }
 else {
-    Write-Info "Skipping Chezmoi setup (--SkipChezmoi)"
+    Write-Success "Chezmoi found"
+        
+    $chezmoiDir = Join-Path $scriptDir "chezmoi"
+        
+    if (Test-Path $chezmoiDir) {
+        Write-Info "Chezmoi dotfiles directory: $chezmoiDir"
+        Write-Info "To apply configurations, run: chezmoi apply"
+    }
+    else {
+        Write-Warning "Chezmoi directory not found. Create it with your dotfiles at: $chezmoiDir"
+    }
+        
+    # Initialize chezmoi with git if not already done
+    if (-not (Test-Path "$env:USERPROFILE\.local\share\chezmoi\.git")) {
+        Write-Info "Initializing Chezmoi repository..."
+        try {
+            chezmoi init --apply=false 2>&1 | ForEach-Object { Write-Info $_ }
+            Write-Success "Chezmoi initialized"
+        }
+        catch {
+            Write-Warning "Chezmoi initialization: $_"
+        }
+    }
+    else {
+        Write-Success "Chezmoi already initialized"
+    }
 }
 
-# ============================================================================
-# ENVIRONMENT VARIABLES
-# ============================================================================
 
-Write-Header "Environment Configuration"
-
-# Set profile environment variable
-$profileEnv = if ($Profile -eq 'work') { 'work' } else { 'personal' }
-[System.Environment]::SetEnvironmentVariable('BOOTSTRAP_PROFILE', $profileEnv, 'User')
-Write-Success "Profile variable set: BOOTSTRAP_PROFILE=$profileEnv"
 
 # ============================================================================
 # COMPLETION
 # ============================================================================
 
 Write-Header "Bootstrap Complete"
-Write-Success "All components installed for profile: $Profile"
+Write-Success "All components installed for profile: $Perfil"
 Write-Info ""
 Write-Info "Next steps:"
 Write-Info "1. Restart your terminal for environment changes to take effect"

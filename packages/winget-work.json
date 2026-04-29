@@ -51,6 +51,10 @@
             "Version": "latest"
         },
         {
+            "PackageIdentifier": "KeePassXCTeam.KeePassXC",
+            "Version": "latest"
+        },
+        {
             "PackageIdentifier": "twpayne.chezmoi",
             "Version": "latest"
         }
