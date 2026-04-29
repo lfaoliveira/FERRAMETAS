@@ -43,10 +43,6 @@
             "Version": "latest"
         },
         {
-            "PackageIdentifier": "Anaconda.Miniconda3",
-            "Version": "latest"
-        },
-        {
             "PackageIdentifier": "jdx.mise",
             "Version": "latest"
         },

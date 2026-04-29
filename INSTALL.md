@@ -24,8 +24,9 @@ curl -o init.ps1 https://raw.githubusercontent.com/lfaoliveira/FERRAMENTAS/main/
 - **Windows 10/11** (any edition)
 - **App Installer** (WinGet) - Usually pre-installed
   - If missing: [Download from Microsoft Store](https://www.microsoft.com/store/apps/9NBLGGH4NNS1)
+- **Git** - For cloning the repository
 - **Administrator access** (required for installations)
-- **Internet connection** (for downloads and Git access)
+- **Internet connection** (for downloads)
 
 ---
 
@@ -49,74 +50,20 @@ Windows Key → Type "PowerShell" → Right-click → "Run as administrator"
 .\init.ps1 -Profile full
 ```
 
-### 3. Provide Information When Prompted
-
-The script will ask for:
-
-1. **Git Name** - Your full name (for commits)
-   ```
-   Enter your name for Git config
-   ```
-
-2. **Git Email** - Your email address
-   ```
-   Enter your email for Git config
-   ```
-
-3. **Browser Open** - Opens GitHub/GitLab token creation page
-   ```
-   Open token creation page in browser? (Y/n)
-   ```
-
-4. **Personal Access Token (PAT)** - Copy-paste from GitHub/GitLab
-   ```
-   Paste your Personal Access Token: ••••••••••••••••
-   ```
-
-### 4. Wait for Installation
+### 3. Wait for Installation
 
 The script will:
-- ✅ Install Git
-- ✅ Clone the FERRAMENTAS repository
-- ✅ Install all applications (WinGet)
-- ✅ Install development tools (Mise)
-- ✅ Initialize dotfile manager (Chezmoi)
+- ✅ Verify prerequisites (WinGet, Mise)
+- ✅ Execute Mise bootstrap tasks
+- ✅ Install WinGet packages (profile-specific)
+- ✅ Install development tools (Python, Go, Node.js, etc)
+- ✅ Initialize Chezmoi dotfile manager
 
 This can take **30-60 minutes** depending on your internet speed.
 
-### 5. Restart Terminal
+### 4. Restart Terminal
 
 After completion, close and reopen PowerShell for environment changes to take effect.
-
----
-
-## 🔑 Getting a Personal Access Token (PAT)
-
-### GitHub
-
-1. Visit: https://github.com/settings/tokens
-2. Click **"Generate new token"** → **"Generate new token (classic)"**
-3. Give it a name: `FERRAMENTAS Bootstrap`
-4. Select scopes:
-   - ✅ `repo` (full control of private repositories)
-   - ✅ `workflow` (update GitHub Action workflows)
-5. Click **"Generate token"**
-6. **Copy** the token immediately (you won't see it again)
-7. Paste into the script when prompted
-
-### GitLab
-
-1. Visit: https://gitlab.com/-/user_settings/personal_access_tokens
-2. Click **"Create new token"**
-3. Give it a name: `FERRAMENTAS Bootstrap`
-4. Select scopes:
-   - ✅ `api` (read/write API)
-   - ✅ `read_repository` (read repository)
-   - ✅ `write_repository` (write repository)
-5. Set expiration (optional but recommended)
-6. Click **"Create personal access token"**
-7. **Copy** the token
-8. Paste into the script when prompted
 
 ---
 
@@ -196,8 +143,12 @@ chezmoi edit ~/.gitconfig
 If you initially chose `work` but want the `full` profile:
 
 ```powershell
-cd ~/FERRAMENTAS
-.\bootstrap.ps1 -Profile full
+# Set the new profile
+$env:BOOTSTRAP_PROFILE = 'personal'
+[System.Environment]::SetEnvironmentVariable('BOOTSTRAP_PROFILE', 'personal', 'User')
+
+# Run only the packages task to install additional apps
+mise run bootstrap:packages
 ```
 
 This will install only the additional applications needed for the full profile.
@@ -229,22 +180,31 @@ winget upgrade Microsoft.AppInstaller
 winget cache
 
 # Try installation again
-.\init.ps1 -Profile work
+mise run bootstrap:packages
 ```
 
-### Git clone fails
+### Mise tasks fail
 
-**Error:** "fatal: repository not found" or "Authentication failed"
+**Error:** "mise: command not found" or task execution errors
 
 **Solutions:**
-1. Verify PAT is correct (no extra spaces)
-2. Verify you're using the right Git platform (GitHub vs GitLab)
-3. Check your internet connection
-4. Try running again - sometimes transient failures occur
+1. Ensure Mise is installed: `winget install jdx.mise`
+2. Restart PowerShell after installing Mise
+3. Verify you're in the FERRAMENTAS directory: `Get-Location`
+4. Check task syntax: `mise run help`
 
 ### Mise tools not found after restart
 
 **Solution:** Restart PowerShell again. Sometimes the PATH takes a moment to update.
+
+### Chezmoi not initializing
+
+**Error:** "chezmoi: command not found"
+
+**Solutions:**
+1. Chezmoi is installed via WinGet (`mise run bootstrap:packages`)
+2. Restart PowerShell after installation
+3. Manually initialize: `chezmoi init --apply=false`
 
 ### Permission denied errors
 

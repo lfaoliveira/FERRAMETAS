@@ -15,21 +15,17 @@ This architecture separates concerns across three tools:
 ## 🔄 Initialization Flow
 
 ```
-Clean Machine
+Clean Machine (with WinGet + Git)
     ↓
 [init.ps1] ← START HERE
-    ├─ Check prerequisites (WinGet)
-    ├─ Install Git
-    ├─ Configure Git (name, email)
-    ├─ Authenticate (GitHub/GitLab PAT)
-    ├─ Clone lfaoliveira/FERRAMENTAS
-    └─ Execute [bootstrap.ps1]
+    ├─ Verify prerequisites (WinGet, Mise)
+    └─ Execute Mise tasks
            ↓
-    [bootstrap.ps1]
-           ├─ Install WinGet packages (profile-based)
-           ├─ Configure Mise tools
-           ├─ Initialize Chezmoi
-           └─ Set environment variables
+    [mise run bootstrap]
+           ├─ bootstrap:check     - Verify WinGet installed
+           ├─ bootstrap:packages  - Install WinGet packages (profile-specific)
+           ├─ bootstrap:tools     - Install Mise tools (python, go, node, etc)
+           └─ bootstrap:chezmoi   - Initialize Chezmoi dotfile manager
                   ↓
            Ready for Development ✅
 ```
@@ -49,14 +45,16 @@ Clean Machine
 ## 📂 Repository Structure
 
 ```
-├── init.ps1                     # ⭐ Start here! Initializes clean machines
-├── bootstrap.ps1                # Main orchestration script
+├── init.ps1                     # ⭐ Start here! Entry point for bootstrap
+├── mise.toml                    # Mise tasks and tool configuration
 ├── README.md                    # This file
+├── INSTALL.md                   # Detailed installation guide
+├── bootstrap.ps1                # [Legacy] Standalone bootstrap script
 ├── .gitignore                   # Git ignore rules
 ├── packages/
-│   ├── winget-work.json        # Work profile packages
+│   ├── winget-work.json        # Work profile WinGet packages
 │   ├── winget-personal.json    # Personal/full profile packages
-│   └── mise.toml               # Runtime and tool versions
+│   └── mise.toml               # Runtime version management (deprecated)
 └── chezmoi/
     ├── README.md               # Chezmoi documentation
     ├── dot_config/             # ~/.config files
@@ -65,138 +63,84 @@ Clean Machine
     └── ...                     # Other dotfiles (prefix with dot_)
 ```
 
+**Note:** `bootstrap.ps1` is kept for backward compatibility but is now executed via Mise tasks in `mise.toml`
+
 ## 🚀 Quick Start
 
 ### Prerequisites
-
 - Windows 10/11
-- App Installer (WinGet) - [Microsoft Store](https://www.microsoft.com/store/apps/9NBLGGH4NNS1)
 - Administrator/PowerShell access
 
 ### Installation
 
 #### 🎯 For Clean Machines (Recommended)
 
-Run the initializer script first. It handles everything:
+Run the initializer script first:
 
 ```powershell
-# Download and run init.ps1 on a clean machine
-# This will:
-#   1. Install Git
-#   2. Request GitHub/GitLab PAT
-#   3. Clone FERRAMENTAS repository
-#   4. Run bootstrap automatically
-
-.\init.ps1 -Profile work
-.\init.ps1 -Profile full  # For personal machines
+.\init.ps1
 ```
 
-**With GitLab instead of GitHub:**
-```powershell
-.\init.ps1 -Profile work -GitPlatform gitlab
-```
+The script will:
+1. ✅ Execute `mise run bootstrap` to install everything
+2. ✅ Set up environment variables
 
 ---
 
 #### 🔄 For Existing FERRAMENTAS Directory
 
-If you already have the FERRAMENTAS repository cloned:
-
-#### 1️⃣ Work Profile
+If you already have the FERRAMENTAS repository cloned, run tasks directly:
 
 ```powershell
-# Run with administrator privileges
-.\bootstrap.ps1 -Profile work
-```
+# Run complete bootstrap with Mise tasks
+mise run bootstrap
 
-#### 2️⃣ Personal/Full Profile
-
-```powershell
-.\bootstrap.ps1 -Profile full
-```
-
-#### Optional: Skip specific tools
-
-```powershell
-# Skip WinGet installation
-.\bootstrap.ps1 -Profile work -SkipWinget
-
-# Skip Mise setup
-.\bootstrap.ps1 -Profile full -SkipMise
-
-# Skip Chezmoi initialization
-.\bootstrap.ps1 -Profile work -SkipChezmoi
+# Or run individual tasks
+mise run bootstrap:check        # Verify prerequisites
+mise run bootstrap:packages     # Install WinGet packages
+mise run bootstrap:tools        # Install Mise tools
+mise run bootstrap:chezmoi      # Initialize Chezmoi
 ```
 
 ---
 
-## 🔧 `init.ps1` - Initialization Script
+## 🔧 Using Mise Tasks
 
-The `init.ps1` script automates the entire setup process for clean machines.
+All bootstrap operations are managed through Mise tasks defined in `mise.toml`.
 
-### What it does
-
-1. **Verifies prerequisites** - Checks Windows version and WinGet availability
-2. **Installs Git** - Uses WinGet to install Git for Windows
-3. **Configures Git** - Prompts for name and email
-4. **GitHub/GitLab Authentication** - Collects Personal Access Token (PAT)
-5. **Clones Repository** - Clones `lfaoliveira/FERRAMENTAS` to `~/FERRAMENTAS`
-6. **Runs Bootstrap** - Automatically executes `bootstrap.ps1` with specified profile
-
-### Usage
+### Available Tasks
 
 ```powershell
-# Default: work profile, GitHub
-.\init.ps1
+# Main bootstrap task (runs all subtasks)
+mise run bootstrap
 
-# Full profile with GitHub
-.\init.ps1 -Profile full
-
-# Work profile with GitLab
-.\init.ps1 -Profile work -GitPlatform gitlab
-
-# Full profile with GitLab
-.\init.ps1 -Profile full -GitPlatform gitlab
+# Utility tasks
+mise run versions              # Show installed versions
+mise run status                # Show bootstrap status
+mise run help                  # Show task help
 ```
 
-### PAT (Personal Access Token) Setup
+### Task Details
 
-**GitHub:**
-- Visit: https://github.com/settings/tokens
-- Required scopes: `repo`, `workflow`
-- Token will be prompted during script execution
+**bootstrap:check**
+- Verifies Windows version
+- Checks execution policy
+- Validates WinGet and Mise installation
 
-**GitLab:**
-- Visit: https://gitlab.com/-/user_settings/personal_access_tokens
-- Required scopes: `api`, `read_repository`, `write_repository`
-- Token will be prompted during script execution
+**bootstrap:packages**
+- Installs Windows applications via WinGet
+- Uses `packages/winget-${BOOTSTRAP_PROFILE}.json`
+- Supports `work` and `personal` profiles
 
-### Security
+**bootstrap:tools**
+- Installs development tools via Mise
+- Installs: Python, Node.js, Go, Java, Task runner
+- Configured in `packages/mise.toml`
 
-- PAT is never stored in plain text on disk
-- Credentials are cleared from memory after authentication
-- Use GitHub/GitLab's credential helpers for subsequent operations
-
-### Distribution
-
-**To distribute `init.ps1` to clean machines:**
-
-1. **Upload to your FERRAMENTAS repository** (root level)
-2. **Host on a web server** or share via:
-   ```powershell
-   # Download and execute directly (if hosted online)
-   $url = "https://your-server.com/init.ps1"
-   Invoke-WebRequest -Uri $url -OutFile init.ps1
-   .\init.ps1 -Profile work
-   ```
-
-3. **Create a shortcut** for users:
-   ```powershell
-   # Add to documentation
-   Windows Key → PowerShell (Admin)
-   Invoke-WebRequest https://raw.githubusercontent.com/lfaoliveira/FERRAMENTAS/main/init.ps1 -OutFile init.ps1
-   .\init.ps1
-   ```
+**bootstrap:chezmoi**
+- Initializes Chezmoi dotfile manager
+- Sets up git repository in `~/.local/share/chezmoi/`
+- Prepares to apply configurations from `./chezmoi/`
 
 ## 📦 What Gets Installed
 
