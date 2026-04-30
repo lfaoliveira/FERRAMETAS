@@ -145,21 +145,6 @@ else {
     Write-Success "Mise is installed"
 }
 
-# ============================================================================
-# VERIFY BOOTSTRAP SCRIPT
-# ============================================================================
-
-Write-Header "Verifying Bootstrap Script"
-
-$bootstrapPath = Join-Path -Path $scriptDir -ChildPath "bootstrap.ps1"
-
-if (-not (Test-Path $bootstrapPath)) {
-    Write-Error "bootstrap.ps1 not found in current directory"
-    Write-Error "Expected at: $bootstrapPath"
-    exit 1
-}
-
-Write-Success "bootstrap.ps1 found"
 
 # ============================================================================
 # RUN BOOTSTRAP

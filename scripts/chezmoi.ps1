@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 
 <#
 .SYNOPSIS
@@ -35,8 +35,8 @@ function Test-CommandExists {
 # INITIALIZATION
 # ============================================================================
 
-Write-Header "Windows Bootstrap - Chezmoi Setup"
-Write-Info "Starting Chezmoi setup process..."
+Write-Host "Windows Bootstrap - Chezmoi Setup"
+Write-Host "Starting Chezmoi setup process..."
 
 # Verify script location
 $scriptDir = Split-Path -Parent $PSCommandPath
@@ -45,7 +45,7 @@ $scriptDir = Split-Path -Parent $PSCommandPath
 # CHEZMOI SETUP
 # ============================================================================
 
-Write-Header "Initializing Chezmoi"
+Write-Host "Initializing Chezmoi"
     
 # Check if Chezmoi is installed
 if (-not (Test-CommandExists chezmoi)) {
