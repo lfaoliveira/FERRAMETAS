@@ -61,6 +61,10 @@
                 {
                     "PackageIdentifier": "Mozilla.Firefox.DeveloperEdition",
                     "Version": "latest"
+                },
+                {
+                    "PackageIdentifier": "FxSound.FxSound",
+                    "Version": "latest"
                 }
             ]
         }
