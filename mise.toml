@@ -1,9 +1,11 @@
 [tools]
+uv = "latest"
 python = "3.13"
 nodejs = "24"
 java = "21"
 go = "latest"
 task = "latest"
+chezmoi = "latest"
 
 [tasks.winget]
 description = "Instalar tudo do winget"
@@ -13,6 +15,10 @@ run = "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/winget.ps1"
 description = "Inicializar chezmoi"
 run = "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/chezmoi.ps1"
 
+[tasks.debloater]
+description = "Aplicar Windows Debloater"
+run = "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/debloater.ps1"
+
 [tasks.bootstrap]
 description = "Run complete bootstrap"
-run = [{ task = "winget" }, { task = "chezmoi" }]
+run = [{ task = "winget" }, { task = "chezmoi" }, { task = "debloater" }]

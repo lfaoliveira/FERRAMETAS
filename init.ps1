@@ -134,8 +134,12 @@ if (-not (Test-CommandExists winget)) {
     Write-Info "Please install App Installer:"
     #Instalando usando comando recomendado pela microsoft
     Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe
+
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
+    [System.Environment]::GetEnvironmentVariable("Path", "User")
 }
 Write-Success "WinGet is installed"
+winget --version
 
 # Check Mise
 if (-not (Test-CommandExists mise)) {
@@ -160,10 +164,15 @@ if (-not (Test-CommandExists mise)) {
     Write-Error "Mise is required to run bootstrap tasks"
     Write-Error "Please install Mise via WinGet first: "
     winget install jdx.mise
-    if (-not ($LASTEXITCODE -eq 0) ) {
+    #Recarrega PATH pra evitar problema
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
+    [System.Environment]::GetEnvironmentVariable("Path", "User")
+    mise --version
+    if ($LASTEXITCODE -ne 0 ) {
         Write-Error "Erro ao instalar Mise"
         exit 1;
     }
+
 }
 
 Write-Success "Mise is available"
@@ -206,9 +215,6 @@ Write-Success "Setup completed successfully!"
 Write-Info ""
 Write-Info "Next steps:"
 Write-Info "1. Restart your terminal for environment changes to take effect"
-Write-Info "2. Review bootstrap.ps1 and customize as needed"
-Write-Info "3. Check Mise tools: mise versions"
-Write-Info "4. Apply Chezmoi configurations: chezmoi apply"
 Write-Info ""
 Write-Info "For issues, check:"
 Write-Info "  - Mise: https://mise.jdx.dev"

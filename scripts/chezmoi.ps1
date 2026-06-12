@@ -44,50 +44,43 @@ $scriptDir = Split-Path -Parent $PSCommandPath
 # ============================================================================
 # CHEZMOI SETUP
 # ============================================================================
+#Recarrega PATH pra garantir install do chezmoi
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
+[System.Environment]::GetEnvironmentVariable("Path", "User")
+chezmoi --version
+if ($LASTEXITCODE -ne 0 ) {
+    Write-Error "Erro ao instalar chezmoi"
+    exit 1;
+}
 
-Write-Host "Initializing Chezmoi"
-    
-# Check if Chezmoi is installed
-if (-not (Test-CommandExists chezmoi)) {
-    Write-Host "Chezmoi not found. Installing..." -ForegroundColor Cyan
+
+Write-Host "✓ Chezmoi found" -ForegroundColor Green
+
+$chezmoiDir = Join-Path $scriptDir "chezmoi"
         
+if (Test-Path $chezmoiDir) {
+    Write-Host "Chezmoi dotfiles directory: $chezmoiDir" -ForegroundColor Cyan
+    Write-Host "To apply configurations, run: chezmoi apply" -ForegroundColor Cyan
+}
+else {
+    Write-Host "⚠ Chezmoi directory not found. Create it with your dotfiles at: $chezmoiDir" -ForegroundColor Yellow
+}
+        
+# Initialize chezmoi with git if not already done
+if (-not (Test-Path "$env:USERPROFILE\.local\share\chezmoi\.git")) {
+    Write-Host "Initializing Chezmoi repository..." -ForegroundColor Cyan
     try {
-        winget install --id twpayne.chezmoi --accept-source-agreements --accept-package-agreements
-        Write-Host "✓ Chezmoi installed" -ForegroundColor Green
+        chezmoi init --apply=false 2>&1 | ForEach-Object { Write-Host $_ -ForegroundColor Cyan }
+        Write-Host "✓ Chezmoi initialized" -ForegroundColor Green
     }
     catch {
-        Write-Host "✗ Chezmoi installation failed: $_" -ForegroundColor Red
-        exit 1
+        Write-Host "⚠ Chezmoi initialization: $_" -ForegroundColor Yellow
     }
 }
 else {
-    Write-Host "✓ Chezmoi found" -ForegroundColor Green
-        
-    $chezmoiDir = Join-Path $scriptDir "chezmoi"
-        
-    if (Test-Path $chezmoiDir) {
-        Write-Host "Chezmoi dotfiles directory: $chezmoiDir" -ForegroundColor Cyan
-        Write-Host "To apply configurations, run: chezmoi apply" -ForegroundColor Cyan
-    }
-    else {
-        Write-Host "⚠ Chezmoi directory not found. Create it with your dotfiles at: $chezmoiDir" -ForegroundColor Yellow
-    }
-        
-    # Initialize chezmoi with git if not already done
-    if (-not (Test-Path "$env:USERPROFILE\.local\share\chezmoi\.git")) {
-        Write-Host "Initializing Chezmoi repository..." -ForegroundColor Cyan
-        try {
-            chezmoi init --apply=false 2>&1 | ForEach-Object { Write-Host $_ -ForegroundColor Cyan }
-            Write-Host "✓ Chezmoi initialized" -ForegroundColor Green
-        }
-        catch {
-            Write-Host "⚠ Chezmoi initialization: $_" -ForegroundColor Yellow
-        }
-    }
-    else {
-        Write-Host "✓ Chezmoi already initialized" -ForegroundColor Green
-    }
+    Write-Host "✓ Chezmoi already initialized" -ForegroundColor Green
 }
+
 
 Write-Host "`n" + ("=" * 80) -ForegroundColor Magenta
 Write-Host "Chezmoi Setup Complete" -ForegroundColor Magenta
