@@ -23,16 +23,10 @@
                     "PackageIdentifier": "RARLab.WinRAR"
                 },
                 {
-                    "PackageIdentifier": "OpenJS.NodeJS"
-                },
-                {
                     "PackageIdentifier": "Postman.Postman"
                 },
                 {
                     "PackageIdentifier": "beekeeper-studio.beekeeper-studio"
-                },
-                {
-                    "PackageIdentifier": "astral-sh.uv"
                 },
                 {
                     "PackageIdentifier": "KeePassXCTeam.KeePassXC"
