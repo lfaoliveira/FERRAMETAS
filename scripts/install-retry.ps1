@@ -28,6 +28,8 @@ if (!$packages) { Write-Host "No packages found."; }
 # --- Install job (runs in parallel) ---
 $jobScript = {
     param([string]$pkg)
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    $OutputEncoding = [System.Text.Encoding]::UTF8
 
     $ProgressPreference = 'SilentlyContinue'
     $delay = 2
