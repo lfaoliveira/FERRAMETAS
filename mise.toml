@@ -9,7 +9,7 @@ chezmoi = "latest"
 
 [tasks.winget]
 description = "Instalar tudo do winget"
-run = "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/winget.ps1"
+run = "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/install-retry.ps1"
 
 [tasks.chezmoi]
 description = "Inicializar chezmoi"
