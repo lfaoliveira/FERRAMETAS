@@ -2,35 +2,45 @@
 # "work" é sempre instalado; "personal" é somado no perfil personal.
 
 work = [
-  "Brave.Brave",
-  "Microsoft.VisualStudioCode",
-  "Git.Git",
-  "Obsidian.Obsidian",
-  "Docker.DockerDesktop",
-  "RARLab.WinRAR",
-  "Postman.Postman",
-  "Bruno.Bruno",
-  "Amazon.AWSCLI",
-  "Anthropic.Claude",
-  "fathah.HermesDesktop",
-  "beekeeper-studio.beekeeper-studio",
-  "KeePassXCTeam.KeePassXC",
-  "JetBrains.IntelliJIDEA.Community",
-  "Mozilla.Firefox.DeveloperEdition",
-  "FxSound.FxSound",
+    # Browsers
+    "Brave.Brave",
+    "Mozilla.Firefox.DeveloperEdition",
+    # IDE
+    "Microsoft.VisualStudioCode",
+    "JetBrains.IntelliJIDEA.Community",
+    "Git.Git",
+    # API e Dados
+    "Bruno.Bruno",
+    "Postman.Postman",
+    "beekeeper-studio.beekeeper-studio",
+    # Infra
+    "Docker.DockerDesktop",
+    "Amazon.AWSCLI",
+    # Documentacao e produtividade
+    "Obsidian.Obsidian",
+    "xanderfrangos.twinkletray",
+    "RARLab.WinRAR",
+    "KeePassXCTeam.KeePassXC",
+    # IA
+    "Anthropic.Claude",
+    "Anomaly.OpenCode.Desktop",
+    #            "FxSound.FxSound",
 ]
 
 personal = [
-  "Valve.Steam",
-  "Spotify.Spotify",
-  "Discord.Discord",
-  "EpicGames.EpicGamesLauncher",
-  "VideoLAN.VLC",
-  "Microsoft.VCRedist.2010.x64",
-  "Microsoft.VCRedist.2012.x86",
-  "Microsoft.VCRedist.2013.x64",
-  "Microsoft.VCRedist.2015+.x86",
-  "Google.GoogleDrive",
-  "qBittorrent.qBittorrent",
-  "Guru3D.Afterburner",
+    # Jogo
+    "Valve.Steam",
+    "EpicGames.EpicGamesLauncher",
+    "Microsoft.VCRedist.2010.x64",
+    "Microsoft.VCRedist.2012.x86",
+    "Microsoft.VCRedist.2013.x64",
+    "Microsoft.VCRedist.2015+.x86",
+    "Guru3D.Afterburner",
+    # Util
+    "VideoLAN.VLC",
+    "Google.GoogleDrive",
+    "Spotify.Spotify",
+    # Resto
+    "Discord.Discord",
+    "qBittorrent.qBittorrent",
 ]

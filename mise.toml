@@ -8,5 +8,5 @@ task = "latest"
 chezmoi = "latest"
 
 [tasks.setup]
-description = "Roda o setup (aceita --perfil e etapas: winget chezmoi debloater)"
+description = "Roda o setup: mise run setup -- work|personal"
 run = "python setup.py"

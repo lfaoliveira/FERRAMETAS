@@ -1,134 +1,134 @@
-"""Bootstrap de máquina Windows. Só stdlib — roda com o Python instalado pelo mise.
+"""Setup da máquina: winget (pacotes do perfil) -> chezmoi -> debloater.
 
-Uso:  python setup.py [--perfil work|personal] [winget] [chezmoi] [debloater]
+Uso: python setup.py [work|personal]
+Falhas não interrompem nada: aparecem só no resumo do fim.
 """
 
-import argparse
-import json
+import io
 import subprocess
 import sys
-import tempfile
 import time
 import tomllib
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+PACOTES_TOML = Path(__file__).resolve().parent / "packages.toml"
 PARALELO = 4
-TENTATIVAS = 4
-# 0 = ok, 0x8A150061 = já instalado, 0x8A15002B = nenhum upgrade aplicável
-SUCESSO = {0, 0x8A150061, 0x8A15002B}
+TENTATIVAS = 3
+ESPERA_ENTRE_TENTATIVAS = 10  # segundos, multiplicado pela tentativa
+
+# 0 = ok, 0x8A150061 = já instalado, 0x8A15002B = sem upgrade disponível
+CODIGOS_DE_SUCESSO = {0, 0x8A150061, 0x8A15002B}
+
+# fmt: off
+WINGET_INSTALL = [
+    "winget", "install", "--exact", "--source", "winget", "--silent",
+    "--disable-interactivity",
+    "--accept-package-agreements", "--accept-source-agreements",
+]
+
+CHEZMOI_INIT = ["mise", "x", "--", "chezmoi", "init"]
+
+DEBLOATER = [
+    "powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command",
+    "function Clear-Host {}; & ([scriptblock]::Create((irm 'https://debloat.raphi.re/')))",
+]
+# fmt: on
+
+Erro = str | None  # None = deu certo
 
 
-def sh(*cmd, quiet=False):
-    return subprocess.run(cmd, text=True, encoding="utf-8", errors="replace", capture_output=quiet)
+def ultima_linha(texto: str) -> str:
+    linhas = [linha.strip() for linha in texto.splitlines() if linha.strip()]
+    return linhas[-1] if linhas else ""
 
 
-# ---------------------------------------------------------------- winget
-def winget_instalados() -> set[str]:
-    """Um único `winget export` em vez de checar pacote a pacote."""
-    with tempfile.TemporaryDirectory() as d:
-        out = Path(d) / "installed.json"
-        sh("winget", "export", "-o", str(out), "--source", "winget", "--accept-source-agreements", quiet=True)
-        if not out.exists():
-            return set()
-        data = json.loads(out.read_text("utf-8-sig"))
-    return {p["PackageIdentifier"].lower() for s in data["Sources"] for p in s["Packages"]}
+def instalar(pacote: str) -> Erro:
+    """Instala um pacote do winget, tentando de novo se falhar."""
+    erro = "não executado"
+    for tentativa in range(TENTATIVAS):
+        if tentativa > 0:
+            # MSI só aceita uma instalação por vez: espera e tenta de novo
+            time.sleep(ESPERA_ENTRE_TENTATIVAS * tentativa)
 
-
-def winget_install(pkg: str) -> tuple[str, bool, str]:
-    for tentativa in range(1, TENTATIVAS + 1):
-        r = sh(
-            "winget",
-            "install",
-            "--id",
-            pkg,
-            "--exact",
-            "--source",
-            "winget",
-            "--silent",
-            "--disable-interactivity",
-            "--accept-package-agreements",
-            "--accept-source-agreements",
-            quiet=True,
+        resultado = subprocess.run(
+            [*WINGET_INSTALL, "--id", pacote],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
         )
-        if (r.returncode & 0xFFFFFFFF) in SUCESSO:
-            return pkg, True, ""
-        time.sleep(2**tentativa)  # MSI aceita 1 instalação por vez → backoff
-    return pkg, False, r.stdout[-1500:]
+        # winget devolve um HRESULT; normaliza para inteiro sem sinal
+        codigo = resultado.returncode & 0xFFFFFFFF
+        if codigo in CODIGOS_DE_SUCESSO:
+            print(f"  ok     {pacote}")
+            return None
+        else:
+            erro = f"0x{codigo:08X} {ultima_linha(resultado.stdout)}"
+
+    print(f"  falhou {pacote}")
+    return erro
 
 
-def etapa_winget(perfil: str) -> bool:
-    cfg = tomllib.loads((ROOT / "packages.toml").read_text("utf-8"))
-    pacotes = cfg["work"] + (cfg["personal"] if perfil == "personal" else [])
-
-    sh("winget", "source", "update", quiet=True)
-    ja = winget_instalados()
-    faltam = [p for p in pacotes if p.lower() not in ja]
-    print(f"winget: {len(faltam)} a instalar, {len(pacotes) - len(faltam)} já presentes")
-
-    falhas = []
-    with ThreadPoolExecutor(PARALELO) as ex:
-        for fut in as_completed([ex.submit(winget_install, p) for p in faltam]):
-            pkg, ok, log = fut.result()
-            print(f"  {'✓' if ok else '✗'} {pkg}")
-            if not ok:
-                falhas.append((pkg, log))
-    for pkg, log in falhas:
-        print(f"\n--- {pkg} ---\n{log}")
-    return not falhas
+def rodar(comando: list[str]) -> Erro:
+    codigo = subprocess.run(comando).returncode
+    return None if codigo == 0 else f"saiu com código {codigo}"
 
 
-# ---------------------------------------------------------------- chezmoi
-def etapa_chezmoi(perfil: str) -> bool:
-    if (Path.home() / ".local/share/chezmoi/.git").exists():
-        print("chezmoi: já inicializado")
-        return True
-    return sh("mise", "x", "--", "chezmoi", "init", "--apply=false").returncode == 0
+def escolher_perfil(perfis: list[str]) -> str:
+    if len(sys.argv) > 1:
+        perfil = sys.argv[1]
+    else:
+        perfil = input(f"Perfil ({'/'.join(perfis)}): ").strip()
+
+    if perfil not in perfis:
+        sys.exit(f"Perfil inválido: {perfil!r}")
+    return perfil
 
 
-# ---------------------------------------------------------------- debloater
-def etapa_debloater(perfil: str) -> bool:
-    ps = "function Clear-Host {}; & ([scriptblock]::Create((Invoke-RestMethod 'https://debloat.raphi.re/')))"
-    return sh("powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", ps).returncode == 0
+def pacotes_do_perfil(listas: dict[str, list[str]], perfil: str) -> list[str]:
+    """`work` é a base de todos os perfis; os outros somam a própria lista."""
+    if perfil == "work":
+        return listas["work"]
+    return listas["work"] + listas[perfil]
 
 
-ETAPAS = {"winget": etapa_winget, "chezmoi": etapa_chezmoi, "debloater": etapa_debloater}
+def instalar_todos(pacotes: list[str]) -> dict[str, Erro]:
+    with ThreadPoolExecutor(PARALELO) as executor:
+        erros = executor.map(instalar, pacotes)
+        return dict(zip(pacotes, erros, strict=True))
 
 
-def main() -> int:
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # ✓/✗ mesmo com saída redirecionada
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--perfil", choices=["work", "personal"])
-    ap.add_argument("etapas", nargs="*", metavar="ETAPA", help=" | ".join(ETAPAS))
-    a = ap.parse_args()
-    etapas = a.etapas or list(ETAPAS)
-    if invalidas := set(etapas) - ETAPAS.keys():
-        ap.error(f"etapas inválidas: {invalidas}")
+def mostrar_resumo(erros: dict[str, Erro]) -> None:
+    falhas = {nome: erro for nome, erro in erros.items() if erro is not None}
+    print("\n== resumo")
+    if not falhas:
+        print("  tudo certo")
+        return
+    for nome, erro in falhas.items():
+        print(f"  {nome}: {erro}")
+    print(f"  {len(falhas)} falha(s)")
 
-    perfil = a.perfil or {"1": "work", "2": "personal"}.get(input("Perfil  [1] work  [2] personal: ").strip())
-    if not perfil:
-        ap.error("perfil inválido")
 
-    # Runtimes do mise (node, java, go, chezmoi…) baixam em paralelo com o winget
-    log = Path(tempfile.gettempdir()) / "mise-install.log"
-    mise = subprocess.Popen(["mise", "install"], stdout=log.open("w"), stderr=subprocess.STDOUT)
+def main() -> None:
+    if isinstance(sys.stdout, io.TextIOWrapper):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-    resultado = {}
-    for nome in etapas:
-        if nome == "chezmoi":  # chezmoi vem do mise
-            mise.wait()
-        print(f"\n=== {nome} ===")
-        resultado[nome] = ETAPAS[nome](perfil)
-    resultado["mise"] = mise.wait() == 0
+    listas = tomllib.loads(PACOTES_TOML.read_text("utf-8"))
+    perfil = escolher_perfil(list(listas))
+    pacotes = pacotes_do_perfil(listas, perfil)
 
-    print("\n=== resumo ===")
-    for nome, ok in resultado.items():
-        print(f"  {'✓' if ok else '✗'} {nome}")
-    if not resultado["mise"]:
-        print(f"  log do mise: {log}")
-    return 0 if all(resultado.values()) else 1
+    print(f"\n== winget ({perfil}, {len(pacotes)} pacotes)")
+    erros = instalar_todos(pacotes)
+
+    print("\n== chezmoi")
+    erros["chezmoi"] = rodar(CHEZMOI_INIT)
+
+    print("\n== debloater")
+    erros["debloater"] = rodar(DEBLOATER)
+
+    mostrar_resumo(erros)
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()

@@ -52,13 +52,11 @@ if (-not (Get-Command mise -ErrorAction SilentlyContinue)) {
     Sync-Path
 }
 
-# 4. Python (so ele agora; o resto do mise.toml o setup.py instala em paralelo com o winget)
+# 4. Runtimes do mise.toml (python, node, java, go, chezmoi...)
 mise trust
-mise install python
+mise install
 $python = mise which python
 if (-not $python) { throw 'mise nao conseguiu instalar o Python.' }
 
-# 5. Daqui pra frente e tudo Python
-$argv = if ($Perfil) { @('--perfil', $Perfil) } else { @() }
-& $python setup.py @argv
-if ($LASTEXITCODE -ne 0) { Write-Warning "setup.py terminou com codigo $LASTEXITCODE" }
+# 5. Daqui pra frente e tudo Python (sem perfil, ele pergunta)
+& $python setup.py $Perfil
