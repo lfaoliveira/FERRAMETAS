@@ -3,7 +3,7 @@
 Em um **PowerShell como Administrador**, numa máquina Windows recém-formatada:
 
 ```powershell
-irm https://raw.githubusercontent.com/lfaoliveira/FERRAMETAS/main/init.ps1 | iex
+irm https://raw.githubusercontent.com/lfaoliveira/app-life-saver/main/init.ps1 | iex
 ```
 
 Não precisa de git nem de Python: o script baixa o repo em `~\app-life-saver`, instala o que falta e segue sozinho.
