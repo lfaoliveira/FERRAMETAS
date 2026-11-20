@@ -56,8 +56,9 @@ class Progresso:
 
     LARGURA_BARRA = 20
 
-    def __init__(self, total: int) -> None:
-        self.total = total
+    def __init__(self, pacotes: list[str]) -> None:
+        self.total = len(pacotes)
+        self.largura_nome = max(map(len, pacotes), default=0)
         self.concluidos = 0
         self.em_andamento: list[str] = []
         self.inicio = time.monotonic()
@@ -79,25 +80,26 @@ class Progresso:
         with self.lock:
             self._apagar()
 
-    def comecou(self, pacote: str, mensagem: str) -> None:
+    def comecou(self, pacote: str, status: str) -> None:
         with self.lock:
             self.em_andamento.append(pacote)
-            self._imprimir(mensagem)
+            self._imprimir(pacote, status)
 
-    def avisar(self, mensagem: str) -> None:
+    def avisar(self, pacote: str, status: str) -> None:
         with self.lock:
-            self._imprimir(mensagem)
+            self._imprimir(pacote, status)
 
-    def terminou(self, pacote: str, mensagem: str) -> None:
+    def terminou(self, pacote: str, status: str) -> None:
         with self.lock:
             self.em_andamento.remove(pacote)
             self.concluidos += 1
-            self._imprimir(mensagem)
+            self._imprimir(pacote, status)
 
     # Os métodos abaixo assumem que o lock já está com quem chamou.
-    def _imprimir(self, mensagem: str) -> None:
+    def _imprimir(self, pacote: str, status: str) -> None:
+        """Nome do pacote alinhado à esquerda, status à direita."""
         self._apagar()
-        print(mensagem)
+        print(f"  {pacote:<{self.largura_nome}}  {status}")
         self._desenhar()
 
     def _desenhar(self) -> None:
@@ -151,13 +153,12 @@ def winget_instalados() -> set[str]:
 
 def instalar(pacote: str, ja_instalado: bool, progresso: Progresso) -> Erro:
     """Instala (ou atualiza) um pacote do winget, tentando de novo se falhar."""
-    acao = "atualizando" if ja_instalado else "instalando"
-    progresso.comecou(pacote, f"  {acao:<12} {pacote}")
+    progresso.comecou(pacote, "atualizando..." if ja_instalado else "instalando...")
 
     erro = "não executado"
     for tentativa in range(TENTATIVAS):
         if tentativa > 0:
-            progresso.avisar(f"  de novo ({tentativa + 1}/{TENTATIVAS}) {pacote}")
+            progresso.avisar(pacote, f"tentando de novo ({tentativa + 1}/{TENTATIVAS})")
             # MSI só aceita uma instalação por vez: espera e tenta de novo
             time.sleep(ESPERA_ENTRE_TENTATIVAS * tentativa)
 
@@ -178,11 +179,11 @@ def instalar(pacote: str, ja_instalado: bool, progresso: Progresso) -> Erro:
                 status = "atualizado"
             else:
                 status = "instalado"
-            progresso.terminou(pacote, f"  ok           {pacote} ({status})")
+            progresso.terminou(pacote, f"ok, {status}")
             return None
         erro = f"0x{codigo:08X} {ultima_linha(resultado.stdout)}"
 
-    progresso.terminou(pacote, f"  falhou       {pacote}")
+    progresso.terminou(pacote, "FALHOU (detalhes no resumo)")
     return erro
 
 
@@ -213,7 +214,7 @@ def instalar_todos(pacotes: list[str]) -> dict[str, Erro]:
     print("  verificando o que já está instalado...")
     instalados = winget_instalados()
 
-    with Progresso(len(pacotes)) as progresso, ThreadPoolExecutor(PARALELO) as executor:
+    with Progresso(pacotes) as progresso, ThreadPoolExecutor(PARALELO) as executor:
         erros = executor.map(
             lambda pacote: instalar(pacote, pacote.lower() in instalados, progresso),
             pacotes,
