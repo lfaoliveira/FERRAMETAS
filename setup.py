@@ -41,6 +41,7 @@ DEBLOATER = [
     "powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command",
     "function Clear-Host {}; & ([scriptblock]::Create((irm 'https://debloat.raphi.re/')))",
 ]
+UPDATE_PS1 = ["winget", "upgrade", "Microsoft.PowerShell"]
 # fmt: on
 
 Erro = str | None  # None = deu certo
@@ -145,9 +146,7 @@ def winget_instalados() -> set[str]:
             return set()
         dados = json.loads(arquivo.read_text("utf-8-sig"))
     return {
-        pacote["PackageIdentifier"].lower()
-        for origem in dados["Sources"]
-        for pacote in origem["Packages"]
+        pacote["PackageIdentifier"].lower() for origem in dados["Sources"] for pacote in origem["Packages"]
     }
 
 
@@ -249,6 +248,7 @@ def main() -> None:
 
     print("\n== debloater")
     erros["debloater"] = rodar(DEBLOATER)
+    erros["powershell"] = rodar(UPDATE_PS1)
 
     mostrar_resumo(erros)
 
