@@ -2,10 +2,13 @@
 #
 # Funciona de dois jeitos (sempre em PowerShell como Administrador):
 #   irm https://raw.githubusercontent.com/lfaoliveira/FERRAMETAS/main/init.ps1 | iex
-#   .\init.ps1 -Perfil work            # com o repo ja baixado
+#   powershell -ExecutionPolicy Bypass -File .\init.ps1 -Perfil work   # com o repo ja baixado
 #
-# Sem `exit` de proposito: rodando via iex, `exit` fecharia o PowerShell do usuario.
-param([ValidateSet('work', 'personal')][string]$Perfil)
+# Cuidados para rodar via iex:
+#   - sem `exit`: fecharia o PowerShell do usuario;
+#   - sem ValidateSet no param: via iex o $Perfil nasce vazio e o ValidateSet rejeita.
+#     Quem valida o perfil e o setup.py.
+param([string]$Perfil)
 
 $Repo = 'lfaoliveira/FERRAMETAS'
 $Destino = Join-Path $HOME 'FERRAMENTAS'
@@ -59,4 +62,4 @@ $python = mise which python
 if (-not $python) { throw 'mise nao conseguiu instalar o Python.' }
 
 # 5. Daqui pra frente e tudo Python (sem perfil, ele pergunta)
-& $python setup.py $Perfil
+if ($Perfil) { & $python setup.py $Perfil } else { & $python setup.py }

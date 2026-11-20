@@ -41,9 +41,11 @@ init.ps1  (PowerShell, única parte que precisa existir numa máquina limpa)
 ## Uso com o repo já baixado
 
 ```powershell
-.\init.ps1 -Perfil personal    # fluxo completo
-mise run setup -- work         # só o setup.py
+powershell -ExecutionPolicy Bypass -File .\init.ps1 -Perfil personal   # fluxo completo
+mise run setup -- work                                                 # só o setup.py
 ```
+
+O `-ExecutionPolicy Bypass` é necessário porque o Windows recém-instalado bloqueia `.ps1` locais.
 
 ## Adicionar um programa
 
@@ -52,6 +54,7 @@ Procure o ID (`winget search <nome>`) e coloque em `work` ou `personal` no `pack
 ## Problemas
 
 - **Algum pacote falhou**: o resumo no fim lista cada falha com o código e a última mensagem do winget. Basta rodar o setup de novo.
+- **`winget` não reconhecido logo após formatar**: o App Installer ainda está se registrando. Rode `Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe` e tente de novo.
 - **Comando não encontrado depois do setup**: feche e abra o terminal para recarregar o PATH.
 
 Credenciais a configurar depois da instalação: [AUTH.md](AUTH.md). Dotfiles: [chezmoi/README.md](chezmoi/README.md).
