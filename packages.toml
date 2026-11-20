@@ -7,7 +7,7 @@ work = [
     "Mozilla.Firefox.DeveloperEdition",
     # IDE
     "Microsoft.VisualStudioCode",
-    "JetBrains.IntelliJIDEA.Community",
+    "JetBrains.IntelliJIDEA",
     "Git.Git",
     # API e Dados
     "Bruno.Bruno",
