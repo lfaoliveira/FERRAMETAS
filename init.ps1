@@ -1,223 +1,64 @@
-#Requires -Version 5.1
-#Requires -RunAsAdministrator
+# Unico script PowerShell do setup: garante winget + mise + Python e entrega para o setup.py.
+#
+# Funciona de dois jeitos (sempre em PowerShell como Administrador):
+#   irm https://raw.githubusercontent.com/lfaoliveira/FERRAMETAS/main/init.ps1 | iex
+#   .\init.ps1 -Perfil work            # com o repo ja baixado
+#
+# Sem `exit` de proposito: rodando via iex, `exit` fecharia o PowerShell do usuario.
+param([ValidateSet('work', 'personal')][string]$Perfil)
 
-<#
-.SYNOPSIS
-    Windows Bootstrap Initializer - Prepares clean machines for bootstrap
-    
-.DESCRIPTION
-    Initializer script for clean Windows machines. Verifies prerequisites and runs the bootstrap script.
-    
-    This script should be run from the FERRAMENTAS directory on a clean machine.
-    
-.PARAMETER Perfil
-    Bootstrap profile to install: 'work' or 'personal'
-    Default: 'work'
-    
-.EXAMPLE
-    .\init.ps1 -Profile work
-    
-.EXAMPLE
-    .\init.ps1 -Profile full
-#>
+$Repo = 'lfaoliveira/FERRAMETAS'
+$Destino = Join-Path $HOME 'FERRAMENTAS'
 
-param(
-    [ValidateSet('work', 'personal')]
-    [string]$Perfil,
-    [switch]$Verbose
-)
+$admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).
+    IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $admin) { throw 'Abra o PowerShell como Administrador e rode de novo.' }
 
-$colors = @{
-    Success = 'Green'
-    Warning = 'Yellow'
-    Error   = 'Red'
-    Info    = 'Cyan'
-    Header  = 'Magenta'
-    Input   = 'White'
+function Sync-Path {
+    $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' +
+                [Environment]::GetEnvironmentVariable('Path', 'User')
 }
 
-# ============================================================================
-# UTILITY FUNCTIONS
-# ============================================================================
-
-function Write-Header {
-    param([string]$Message)
-    Write-Host "`n" + ("=" * 80) -ForegroundColor $colors.Header
-    Write-Host $Message -ForegroundColor $colors.Header
-    Write-Host ("=" * 80) -ForegroundColor $colors.Header
-}
-
-function Write-Success {
-    param([string]$Message)
-    Write-Host "✓ $Message" -ForegroundColor $colors.Success
-}
-
-function Write-Warning {
-    param([string]$Message)
-    Write-Host "⚠ $Message" -ForegroundColor $colors.Warning
-}
-
-function Write-Error {
-    param([string]$Message)
-    Write-Host "✗ $Message" -ForegroundColor $colors.Error
-}
-
-function Write-Info {
-    param([string]$Message)
-    Write-Host "ℹ $Message" -ForegroundColor $colors.Info
-}
-
-function Test-CommandExists {
-    param([string]$Command)
-    $null = Get-Command $Command -ErrorAction SilentlyContinue
-    return $?
-}
-
-# ============================================================================
-# INITIALIZATION
-# ============================================================================
-
-Write-Header "Windows Bootstrap Initializer"
-
-# Ask user for profile if not provided
-if ([string]::IsNullOrWhiteSpace($Perfil)) {
-    Write-Info "Select installation profile:"
-    Write-Info ""
-    Write-Host "  1. work    - Development tools only (recommended for work machines)" -ForegroundColor $colors.Info
-    Write-Host "  2. personal    - Development + Personal apps (games, media, etc)" -ForegroundColor $colors.Info
-    Write-Host ""
-    
-    $choice = Read-Host "Enter your choice (1 or 2)"
-    
-    if ($choice -eq '1') {
-        $Perfil = 'work'
-    }
-    elseif ($choice -eq '2') {
-        $Perfil = 'personal'
-    }
-    else {
-        Write-Error "Invalid choice. Please run the script again."
-        exit 1
-    }
-}
-
-Write-Info "Profile: $Perfil"
-Write-Info "Starting initialization process..."
-
-# Get script directory
-$scriptDir = (Get-Location).Path
-Write-Info "Script directory: $scriptDir"
-
-# ============================================================================
-# PREREQUISITE CHECKS
-# ============================================================================
-
-Write-Header "Checking Prerequisites"
-
-# Check Windows version
-$osVersion = [System.Environment]::OSVersion.Version
-Write-Info "Windows version: $osVersion"
-
-# Check execution policy
-$execPolicy = Get-ExecutionPolicy -Scope CurrentUser
-Write-Info "Current execution policy: $execPolicy"
-
-if ($execPolicy -eq 'Restricted') {
-    Write-Warning "Setting execution policy to RemoteSigned..."
-    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
-    Write-Success "Execution policy updated"
-}
-
-# Check WinGet
-if (-not (Test-CommandExists winget)) {
-    Write-Error "WinGet is not installed or not in PATH"
-    Write-Info "Please install App Installer:"
-    #Instalando usando comando recomendado pela microsoft
-    Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe
-
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
-    [System.Environment]::GetEnvironmentVariable("Path", "User")
-}
-Write-Success "WinGet is installed"
-winget --version
-
-# Check Mise
-if (-not (Test-CommandExists mise)) {
-    Write-Warning "Mise is not installed yet. It will be installed via WinGet during bootstrap."
+# 1. Repo: usa a pasta do script; via irm (sem arquivo local) baixa o zip - nao precisa de git
+if ($PSScriptRoot -and (Test-Path (Join-Path $PSScriptRoot 'setup.py'))) {
+    $Raiz = $PSScriptRoot
 }
 else {
-    Write-Success "Mise is installed"
-}
-
-
-# ============================================================================
-# RUN BOOTSTRAP
-# ============================================================================
-
-Write-Header "Running Bootstrap Tasks"
-
-Write-Info "Starting Mise bootstrap tasks with profile: $Perfil"
-Write-Info ""
-
-# Verify Mise is available
-if (-not (Test-CommandExists mise)) {
-    Write-Error "Mise is required to run bootstrap tasks"
-    Write-Error "Please install Mise via WinGet first: "
-    winget install jdx.mise
-    #Recarrega PATH pra evitar problema
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
-    [System.Environment]::GetEnvironmentVariable("Path", "User")
-    mise --version
-    if ($LASTEXITCODE -ne 0 ) {
-        Write-Error "Erro ao instalar Mise"
-        exit 1;
-    }
-
-}
-
-Write-Success "Mise is available"
-Write-Info ""
-
-try {
-    # Set profile environment variable
-    $PerfilEnv = if ($Perfil -eq 'work') { 'work' } else { 'personal' }
-    [System.Environment]::SetEnvironmentVariable('BOOTSTRAP_PROFILE', $PerfilEnv, 'User')
-    $env:BOOTSTRAP_PROFILE = $PerfilEnv
-    
-    Write-Success "Profile variable set: BOOTSTRAP_PROFILE=$PerfilEnv"
-    Write-Info ""
-    
-    # Run Mise bootstrap task from project root
-    Push-Location $scriptDir
-    mise install
-    mise run bootstrap
-    
-    Pop-Location
-    
-    if ($LASTEXITCODE -eq 0) {
-        Write-Success "Bootstrap completed successfully"
-    }
-    else {
-        Write-Warning "Bootstrap exited with code: $LASTEXITCODE"
+    $Raiz = $Destino
+    if (-not (Test-Path (Join-Path $Raiz 'setup.py'))) {
+        Write-Host "Baixando $Repo para $Raiz ..." -ForegroundColor Cyan
+        $zip = Join-Path $env:TEMP 'ferramentas.zip'
+        $tmp = Join-Path $env:TEMP 'ferramentas-src'
+        $ProgressPreference = 'SilentlyContinue'   # deixa o download ~10x mais rapido no PS 5.1
+        Invoke-WebRequest "https://github.com/$Repo/archive/refs/heads/main.zip" -OutFile $zip -UseBasicParsing
+        Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
+        Expand-Archive $zip $tmp -Force
+        Move-Item (Get-ChildItem $tmp -Directory | Select-Object -First 1).FullName $Raiz
+        Remove-Item $zip, $tmp -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
-catch {
-    Write-Error "Bootstrap execution error: $_"
-    exit 1
+Set-Location $Raiz
+
+# 2. winget
+if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+    Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe
+    Sync-Path
 }
 
-# ============================================================================
-# COMPLETION
-# ============================================================================
+# 3. mise
+if (-not (Get-Command mise -ErrorAction SilentlyContinue)) {
+    winget install --id jdx.mise --exact --source winget --silent `
+        --accept-package-agreements --accept-source-agreements --disable-interactivity
+    Sync-Path
+}
 
-Write-Header "Initialization Complete"
-Write-Success "Setup completed successfully!"
-Write-Info ""
-Write-Info "Next steps:"
-Write-Info "1. Restart your terminal for environment changes to take effect"
-Write-Info ""
-Write-Info "For issues, check:"
-Write-Info "  - Mise: https://mise.jdx.dev"
-Write-Info "  - Chezmoi: https://www.chezmoi.io"
-Write-Info "  - Git: https://git-scm.com/doc"
-Write-Info ""
+# 4. Python (so ele agora; o resto do mise.toml o setup.py instala em paralelo com o winget)
+mise trust
+mise install python
+$python = mise which python
+if (-not $python) { throw 'mise nao conseguiu instalar o Python.' }
+
+# 5. Daqui pra frente e tudo Python
+$argv = if ($Perfil) { @('--perfil', $Perfil) } else { @() }
+& $python setup.py @argv
+if ($LASTEXITCODE -ne 0) { Write-Warning "setup.py terminou com codigo $LASTEXITCODE" }
