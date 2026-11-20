@@ -1,0 +1,46 @@
+# IDs do winget (procure em https://winget.run ou com `winget search`).
+# "work" é sempre instalado; "personal" é somado no perfil personal.
+
+work = [
+    # Browsers
+    "Brave.Brave",
+    "Mozilla.Firefox.DeveloperEdition",
+    # IDE
+    "Microsoft.VisualStudioCode",
+    "JetBrains.IntelliJIDEA.Community",
+    "Git.Git",
+    # API e Dados
+    "Bruno.Bruno",
+    "Postman.Postman",
+    "beekeeper-studio.beekeeper-studio",
+    # Infra
+    "Docker.DockerDesktop",
+    "Amazon.AWSCLI",
+    # Documentacao e produtividade
+    "Obsidian.Obsidian",
+    "xanderfrangos.twinkletray",
+    "RARLab.WinRAR",
+    "KeePassXCTeam.KeePassXC",
+    # IA
+    "Anthropic.Claude",
+    "Anomaly.OpenCode.Desktop",
+    #            "FxSound.FxSound",
+]
+
+personal = [
+    # Jogo
+    "Valve.Steam",
+    "EpicGames.EpicGamesLauncher",
+    "Microsoft.VCRedist.2010.x64",
+    "Microsoft.VCRedist.2012.x86",
+    "Microsoft.VCRedist.2013.x64",
+    "Microsoft.VCRedist.2015+.x86",
+    "Guru3D.Afterburner",
+    # Util
+    "VideoLAN.VLC",
+    "Google.GoogleDrive",
+    "Spotify.Spotify",
+    # Resto
+    "Discord.Discord",
+    "qBittorrent.qBittorrent",
+]

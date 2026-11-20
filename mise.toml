@@ -7,18 +7,6 @@ go = "latest"
 task = "latest"
 chezmoi = "latest"
 
-[tasks.winget]
-description = "Instalar tudo do winget"
-run = "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/install-retry.ps1"
-
-[tasks.chezmoi]
-description = "Inicializar chezmoi"
-run = "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/chezmoi.ps1"
-
-[tasks.debloater]
-description = "Aplicar Windows Debloater"
-run = "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/debloater.ps1"
-
-[tasks.bootstrap]
-description = "Run complete bootstrap"
-run = [{ task = "winget" }, { task = "chezmoi" }, { task = "debloater" }]
+[tasks.setup]
+description = "Roda o setup: mise run setup -- work|personal"
+run = "python setup.py"
