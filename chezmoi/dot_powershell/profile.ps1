@@ -3,3 +3,4 @@
 
 # PowerShell Profiles
 # Customize your PowerShell experience
+(&mise activate pwsh) | Out-String | Invoke-Expression

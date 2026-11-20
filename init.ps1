@@ -11,15 +11,15 @@
 param([string]$Perfil)
 
 $Repo = 'lfaoliveira/FERRAMETAS'
-$Destino = Join-Path $HOME 'FERRAMENTAS'
+$Destino = Join-Path $HOME 'app-life-saver'
 
 $admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).
-    IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $admin) { throw 'Abra o PowerShell como Administrador e rode de novo.' }
 
 function Sync-Path {
     $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' +
-                [Environment]::GetEnvironmentVariable('Path', 'User')
+    [Environment]::GetEnvironmentVariable('Path', 'User')
 }
 
 # 1. Repo: usa a pasta do script; via irm (sem arquivo local) baixa o zip - nao precisa de git
@@ -30,8 +30,8 @@ else {
     $Raiz = $Destino
     if (-not (Test-Path (Join-Path $Raiz 'setup.py'))) {
         Write-Host "Baixando $Repo para $Raiz ..." -ForegroundColor Cyan
-        $zip = Join-Path $env:TEMP 'ferramentas.zip'
-        $tmp = Join-Path $env:TEMP 'ferramentas-src'
+        $zip = Join-Path $env:TEMP 'app-life-saver.zip'
+        $tmp = Join-Path $env:TEMP 'app-life-saver-src'
         $ProgressPreference = 'SilentlyContinue'   # deixa o download ~10x mais rapido no PS 5.1
         Invoke-WebRequest "https://github.com/$Repo/archive/refs/heads/main.zip" -OutFile $zip -UseBasicParsing
         Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue

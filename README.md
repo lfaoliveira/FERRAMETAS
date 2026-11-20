@@ -1,4 +1,4 @@
-# FERRAMENTAS
+# app-life-saver
 
 Em um **PowerShell como Administrador**, numa máquina Windows recém-formatada:
 
@@ -6,7 +6,7 @@ Em um **PowerShell como Administrador**, numa máquina Windows recém-formatada:
 irm https://raw.githubusercontent.com/lfaoliveira/FERRAMETAS/main/init.ps1 | iex
 ```
 
-Não precisa de git nem de Python: o script baixa o repo em `~\FERRAMENTAS`, instala o que falta e segue sozinho.
+Não precisa de git nem de Python: o script baixa o repo em `~\app-life-saver`, instala o que falta e segue sozinho.
 
 ---
 
@@ -35,7 +35,7 @@ init.ps1  (PowerShell, única parte que precisa existir numa máquina limpa)
 
 ## Perfis
 
-- **work** — ferramentas de desenvolvimento (lista `work` em `packages.toml`)
+- **work** — app-life-saver de desenvolvimento (lista `work` em `packages.toml`)
 - **personal** — `work` + jogos, mídia etc. (lista `personal`)
 
 ## Uso com o repo já baixado
@@ -58,4 +58,3 @@ Procure o ID (`winget search <nome>`) e coloque em `work` ou `personal` no `pack
 - **Comando não encontrado depois do setup**: feche e abra o terminal para recarregar o PATH.
 
 Credenciais a configurar depois da instalação: [AUTH.md](AUTH.md). Dotfiles: [chezmoi/README.md](chezmoi/README.md).
-
